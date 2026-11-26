@@ -101,7 +101,9 @@ def act(a,d):
             result_type="wrong"
             msg=f"Incorrecto. {t['name']} se queda en {LEVELS[t['level']]}."
         STATE["lastResult"]={"type":result_type,"teamName":t["name"],"teamId":t["id"],
-                             "eventId":uuid.uuid4().hex,"selectedChoice":current.get("selectedChoice")}
+                             "eventId":uuid.uuid4().hex,"selectedChoice":current.get("selectedChoice"),
+                             "level":current.get("level",t["level"]),"q":current.get("q",""),
+                             "good":current.get("good",""),"bad":current.get("bad","")}
         STATE["current"]=None
         return msg
     if a=="reset":
