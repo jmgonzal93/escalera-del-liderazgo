@@ -16,37 +16,83 @@ def selected_team():
     return next((t for t in STATE['teams'] if t['id'] == STATE['selected']), None)
 
 def act(action, data):
+    global QUESTIONS
+    if action == 'updateQuestionBank':
+        incoming = data.get('questions', [])
+        if not isinstance(incoming, list) or len(incoming) > 500:
+            return 'El banco de preguntas no es válido (máximo 500 preguntas).'
+        cleaned = []
+        for item in incoming:
+            if not isinstance(item, dict):
+                continue
+            try: level = int(item.get('level', -1))
+            except (TypeError, ValueError): continue
+            q = str(item.get('q', '')).strip()[:1200]
+            option_a = str(item.get('good', item.get('optionA', ''))).strip()[:1200]
+            option_b = str(item.get('bad', item.get('optionB', ''))).strip()[:1200]
+            if level not in range(5) or not q or not option_a or not option_b:
+                continue
+            cleaned.append({'level': level, 'q': q, 'good': option_a, 'bad': option_b})
+        if not cleaned:
+            return 'El banco debe tener al menos una pregunta completa.'
+        QUESTIONS = cleaned
+        STATE['used'] = []
+        return f'Banco actualizado: {len(QUESTIONS)} preguntas.'
     if action == 'addTeam':
-        name = str(data.get('name', 'Equipo')).strip()[:28]
-        if not name: return 'Escribí un nombre de equipo.'
-        if len(STATE['teams']) >= 4: return 'Máximo 4 equipos.'
+        name = str(data.get('name', 'Participante')).strip()[:28]
+        if not name: return 'Escribí el nombre del participante.'
+        if len(STATE['teams']) >= 4: return 'Máximo 4 participantes.'
         team = {'id': uuid.uuid4().hex[:8], 'name': name, 'level': 0, 'color': len(STATE['teams'])}
         STATE['teams'].append(team); STATE['selected'] = team['id']
-        return f'Equipo {name} agregado.'
+        return f'Participante {name} agregado.'
     if action == 'selectTeam':
         if any(t['id'] == data.get('id') for t in STATE['teams']): STATE['selected'] = data['id']
-        return 'Equipo seleccionado.'
+        return 'Participante seleccionado.'
     if action == 'draw':
         t = selected_team()
-        if not t: return 'Primero agregá y elegí un equipo.'
-        if t['level'] >= 4: return 'Este equipo ya llegó a la cima.'
+        if not t: return 'Primero agregá y elegí un participante.'
+        if t['level'] >= 4: return 'Este participante ya llegó a la cima.'
         pool = [q for q in QUESTIONS if q['level'] == t['level'] and q not in STATE['used']]
         if not pool:
             STATE['used'] = [q for q in STATE['used'] if q['level'] != t['level']]
             pool = [q for q in QUESTIONS if q['level'] == t['level']]
+        if not pool:
+            return f'No hay preguntas cargadas para el nivel {LEVELS[t["level"]]}. Agregá una desde Administrar preguntas.'
         q = random.choice(pool); STATE['used'].append(q)
-        STATE['current'] = dict(q, teamName=t['name'], teamId=t['id'])
+        q = dict(q)
+        STATE['current'] = dict(q, teamName=t['name'], teamId=t['id'], selectedChoice=None)
         return f'Pregunta para {t["name"]}.'
+    if action == 'answerChoice':
+        t = selected_team()
+        if not t: return 'Elegí un participante.'
+        current = STATE['current']
+        if not current: return 'Primero sacá una pregunta.'
+        if current.get('teamId') != t['id']:
+            return 'La pregunta corresponde a otro participante. Seleccioná a quien está jugando.'
+        choice = str(data.get('choice', '')).upper()
+        if choice not in ('A', 'B'): return 'Elegí la opción A o B.'
+        current['selectedChoice'] = choice
+        return f'{t["name"]} eligió la opción {choice}. Ahora indicá si la respuesta fue correcta o incorrecta.'
     if action == 'answer':
         t = selected_team()
-        if not t: return 'Elegí un equipo.'
-        if not STATE['current']: return 'Primero sacá una pregunta.'
-        if STATE['current'].get('teamId') != t['id']: return 'La pregunta corresponde a otro equipo. Seleccioná el equipo que está jugando.'
-        if data.get('correct'):
-            t['level'] = min(4, t['level'] + 1); STATE['lastResult'] = 'correct'
-            msg = f'¡Correcto! {t["name"]} sube a {LEVELS[t["level"]]}.'
+        if not t: return 'Elegí un participante.'
+        current = STATE['current']
+        if not current: return 'Primero sacá una pregunta.'
+        if current.get('teamId') != t['id']:
+            return 'La pregunta corresponde a otro participante. Seleccioná a quien está jugando.'
+        if current.get('selectedChoice') not in ('A', 'B'):
+            return 'Primero registrá si eligió A o B.'
+        is_correct = bool(data.get('correct'))
+        if is_correct:
+            t['level'] = min(4, t['level'] + 1)
+            result_type = 'winner' if t['level'] >= 4 else 'correct'
+            msg = (f'¡{t["name"]} es el nuevo CEO de la clínica! ¡Felicitaciones, a brindar!'
+                   if result_type == 'winner' else f'¡Correcto! {t["name"]} sube a {LEVELS[t["level"]]}.')
         else:
-            STATE['lastResult'] = 'wrong'; msg = f'Esta vez no. {t["name"]} se queda en {LEVELS[t["level"]]}.'
+            result_type = 'wrong'
+            msg = f'Incorrecto. {t["name"]} se queda en {LEVELS[t["level"]]}.'
+        STATE['lastResult'] = {'type': result_type, 'teamName': t['name'], 'teamId': t['id'],
+                               'eventId': uuid.uuid4().hex, 'selectedChoice': current.get('selectedChoice')}
         STATE['current'] = None
         return msg
     if action == 'reset':
