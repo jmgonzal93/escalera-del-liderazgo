@@ -58,9 +58,9 @@ footer{text-align:center;color:#a9bbd4;font-size:11px;padding:12px}
 .confetti{position:absolute;inset:0;pointer-events:none;background-image:radial-gradient(circle,#ffd447 2px,transparent 3px),radial-gradient(circle,#e95757 3px,transparent 4px),radial-gradient(circle,#3bbf8a 2px,transparent 3px),radial-gradient(circle,#5d91ff 3px,transparent 4px);background-size:90px 120px,130px 100px,110px 150px,160px 130px;animation:confettiFall 3s linear infinite;opacity:.85}
 @keyframes winnerPop{0%{transform:scale(.4) rotate(-4deg);opacity:0}70%{transform:scale(1.06)}100%{transform:scale(1);opacity:1}}
 @keyframes confettiFall{from{background-position:0 -200px,40px -150px,80px -300px,120px -250px}to{background-position:0 900px,40px 850px,80px 1000px,120px 950px}}
-@media(max-width:600px){.display-audio-controls{display:none}.winner-card{padding:28px 16px}.answer-pick-row{grid-template-columns:1fr}}
+@media(max-width:600px){.winner-card{padding:28px 16px}.answer-pick-row{grid-template-columns:1fr}}
 
-.answer-pick.selected-choice{outline:4px solid #fff;box-shadow:0 0 0 7px #f6c44566;background:#ffe28a;color:#172b4d}.answer-pick-row .correct,.answer-pick-row .wrong{font-size:clamp(14px,2vw,18px);min-height:62px}.winner-toast{color:#a36a00;letter-spacing:.02em}</style>
+.answer-pick.selected-choice{outline:5px solid #172b4d;outline-offset:2px;box-shadow:0 0 0 9px #f6c44599;background:#ffe28a!important;color:#172b4d!important;border:3px solid #172b4d;font-weight:1000;transform:scale(1.025)}.answer-pick-row .correct,.answer-pick-row .wrong{font-size:clamp(14px,2vw,18px);min-height:62px}.winner-toast{color:#a36a00;letter-spacing:.02em}</style>
 </head>
 <body>
 <div class="top">
@@ -194,11 +194,15 @@ let controlPin=isController?sessionStorage.getItem("escaleraControlPin"):null;
 if(isController&&!controlPin){controlPin=prompt("Ingresá el PIN de control que configuraste al publicar el juego:");if(controlPin)sessionStorage.setItem("escaleraControlPin",controlPin);}
 
 let audioContext=null,lastAudioEvent=null,audioStateInitialized=false,customVictoryAudio=null,customVictoryObjectUrl=null;
-function activateAudio(){
-  try{audioContext=audioContext||new (window.AudioContext||window.webkitAudioContext)();audioContext.resume();
-    const s=document.getElementById("audioStatus");if(s)s.textContent="Sonidos activados";
-    playTone(660,0,.12,"sine",.06);
-  }catch(e){const s=document.getElementById("audioStatus");if(s)s.textContent="Audio no disponible en este navegador";}
+async function activateAudio(){
+  try{
+    audioContext=audioContext||new (window.AudioContext||window.webkitAudioContext)();
+    await audioContext.resume();
+    const s=document.getElementById("audioStatus");if(s)s.textContent="Sonidos activados ✓";
+    playTone(660,0,.16,"sine",.10);
+  }catch(e){
+    const s=document.getElementById("audioStatus");if(s)s.textContent="Audio no disponible en este navegador";
+  }
 }
 function playTone(freq,delay,duration,wave="sine",volume=.12){
   if(!audioContext)return;
@@ -209,6 +213,7 @@ function playTone(freq,delay,duration,wave="sine",volume=.12){
 }
 function playResultSound(type){
   if(!audioContext)return;
+  if(audioContext.state==="suspended")audioContext.resume();
   if(type==="correct"){[660,880,1100].forEach((f,i)=>playTone(f,i*.11,.18,"sine",.12));}
   else if(type==="wrong"){playTone(190,0,.22,"triangle",.14);playTone(140,.13,.26,"triangle",.12);}
 }
@@ -220,6 +225,7 @@ function playVictoryMusic(){
 }
 function playVictoryFanfare(){
   if(!audioContext)return;
+  if(audioContext.state==="suspended")audioContext.resume();
   // Fanfarria original sintetizada; no contiene una grabación comercial.
   const notes=[523.25,659.25,783.99,1046.5,783.99,1046.5,1318.5];
   notes.forEach((f,i)=>playTone(f,i*.19,.42,"triangle",.15));
@@ -278,8 +284,18 @@ if(ts)ts.innerHTML=state.teams.map(t=>`<button class="${state.selected===t.id?'p
 const activeQuestion=!!state.current;
 const selectedChoice=activeQuestion&&['A','B'].includes(state.current.selectedChoice);
 const pa=document.getElementById("pickA"),pb=document.getElementById("pickB");
-if(pa){pa.disabled=!activeQuestion;pa.classList.toggle("selected-choice",activeQuestion&&state.current.selectedChoice==="A");}
-if(pb){pb.disabled=!activeQuestion;pb.classList.toggle("selected-choice",activeQuestion&&state.current.selectedChoice==="B");}
+if(pa){
+  const chosen=activeQuestion&&state.current.selectedChoice==="A";
+  pa.disabled=!activeQuestion;pa.classList.toggle("selected-choice",chosen);
+  pa.textContent=chosen?"✓ Elegiste A":"Elegió A";
+  pa.setAttribute("aria-pressed",chosen?"true":"false");
+}
+if(pb){
+  const chosen=activeQuestion&&state.current.selectedChoice==="B";
+  pb.disabled=!activeQuestion;pb.classList.toggle("selected-choice",chosen);
+  pb.textContent=chosen?"✓ Elegiste B":"Elegió B";
+  pb.setAttribute("aria-pressed",chosen?"true":"false");
+}
 const mc=document.getElementById("markCorrect"),mw=document.getElementById("markWrong");
 if(mc)mc.disabled=!selectedChoice;if(mw)mw.disabled=!selectedChoice;
 const winner=state.teams.find(t=>t.level>=4);
@@ -300,7 +316,11 @@ async function addTeam(){let input=document.getElementById("teamInput");let name
 async function selectTeam(id){await apiPost("selectTeam",{id});}
 async function drawQuestion(){let d=await apiPost("draw");document.getElementById("statusMsg").textContent=d.message||"Pregunta lista en pantalla.";}
 async function chooseAnswer(choice){
-  let d=await apiPost("answerChoice",{choice});
+  const d=await apiPost("answerChoice",{choice});
+  if(d&&d.state&&d.state.current){
+    state.current.selectedChoice=d.state.current.selectedChoice;
+    render();
+  }
   document.getElementById("statusMsg").textContent=d.message||"Opción registrada.";
 }
 async function answerOutcome(correct){
