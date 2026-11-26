@@ -1,0 +1,42 @@
+LA ESCALERA DEL LIDERAZGO — JUEGO VIRTUAL
+===========================================
+
+Incluye:
+- Tablero para mostrar en la computadora.
+- Control desde tablet o celular.
+- 4 equipos, 5 niveles y 20 preguntas (4 por nivel).
+- La respuesta correcta hace avanzar una posición.
+
+REQUISITOS
+- Computadora con Windows y Python 3 instalado.
+- Tablet conectada a la misma red Wi-Fi que la computadora.
+- No requiere crear cuentas ni configurar una base de datos externa.
+
+CÓMO INICIAR
+1. Descomprimí el ZIP en una carpeta de la computadora.
+2. Si no tenés Python, instalalo desde https://www.python.org/downloads/
+   Durante la instalación de Windows, marcá "Add Python to PATH".
+3. Hacé doble clic en INICIAR_JUEGO.bat.
+   Si Windows pregunta si permitís acceso en la red privada, elegí Permitir.
+4. La ventana negra va a mostrar una dirección para la computadora y otra para la tablet.
+5. En la computadora, abrí http://localhost:8000 y poné pantalla completa (F11).
+6. En la tablet, conectada a la misma Wi-Fi, abrí la dirección que mostró la ventana,
+   terminada en :8000/?mode=controller
+
+CÓMO JUGAR
+1. En el control de la tablet, escribí el nombre de un equipo y tocá Agregar.
+2. Elegí el equipo que va a responder.
+3. Tocá "Sacar desafío". La pregunta y las respuestas sugeridas aparecerán en la computadora.
+4. Leé la pregunta en voz alta. El equipo responde oralmente.
+5. En la tablet, marcá "Correcto" o "Incorrecto".
+6. Si es correcto, el equipo sube un nivel. El objetivo es llegar al CEO.
+
+IMPORTANTE
+- Ambos dispositivos deben estar conectados a la misma Wi-Fi.
+- La ventana de Python debe quedar abierta mientras juegan.
+- Si no conecta, revisá que la red no tenga activado "aislamiento de clientes" y que
+  el firewall de Windows permita Python en redes privadas.
+- Las respuestas sugeridas se muestran en pantalla para ayudar a quien conduce el juego.
+  Si preferís que los jugadores no las vean, podés leerlas desde la tablet y tapar
+  la pantalla de la computadora o puedo preparar una versión donde solo se muestre
+  la pregunta en el tablero y las respuestas queden en el control.

@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>La Escalera del Liderazgo</title>
+<style>
+:root{--navy:#172b4d;--blue:#2f80ed;--green:#27ae60;--orange:#f2994a;--purple:#9b51e0;--red:#eb5757;--cream:#fffaf0}
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:linear-gradient(135deg,#0f1c34,#213c60);color:#fff;min-height:100vh}
+button,input,select{font:inherit}button{cursor:pointer;border:0;border-radius:14px;padding:12px 16px;font-weight:800;transition:.15s}button:hover{transform:translateY(-1px);filter:brightness(1.05)}button:disabled{opacity:.45;cursor:not-allowed;transform:none}
+.top{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px 24px;background:#0b1528cc;border-bottom:1px solid #ffffff22}
+.brand{font-weight:900;letter-spacing:.04em;font-size:clamp(18px,2.5vw,30px)}.sub{color:#b9c8df;font-size:13px}.pill{background:#ffffff16;border:1px solid #ffffff2a;border-radius:999px;padding:7px 12px;color:#dbe8fb;font-size:12px}
+main{max-width:1400px;margin:auto;padding:20px;display:grid;grid-template-columns:minmax(0,1.35fr) minmax(280px,.65fr);gap:18px}
+.panel{background:#ffffff0d;border:1px solid #ffffff20;border-radius:24px;padding:18px;box-shadow:0 18px 40px #0002}
+.panel h2{margin:0 0 12px;font-size:18px}
+.board{position:relative;min-height:580px;overflow:hidden;border-radius:20px;background:linear-gradient(180deg,#bde7ff 0%,#e9f8ff 42%,#d7f2d1 43%,#a8d89b 100%);padding:18px;color:#17324e}
+.sky-deco{position:absolute;right:6%;top:5%;font-size:50px;opacity:.6}
+.stairs{display:flex;flex-direction:column-reverse;gap:9px;position:relative;z-index:1;height:100%}
+.step{display:flex;align-items:center;gap:10px;border:2px solid #ffffffa8;border-radius:16px;padding:10px 12px;min-height:78px;box-shadow:0 5px 0 #17324e22;position:relative}
+.step:nth-child(1){width:58%;margin-left:0}.step:nth-child(2){width:66%;margin-left:8%}.step:nth-child(3){width:74%;margin-left:16%}.step:nth-child(4){width:82%;margin-left:24%}.step:nth-child(5){width:90%;margin-left:32%}
+.step .level{font-size:11px;font-weight:900;letter-spacing:.06em;color:#fff;background:#17324e;border-radius:999px;padding:6px 9px;white-space:nowrap}
+.step .stepname{font-size:clamp(12px,1.4vw,17px);font-weight:900;color:#17324e}
+.tokens{display:flex;gap:5px;flex-wrap:wrap;margin-left:auto;justify-content:flex-end}
+.token{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:900;color:#fff;border:2px solid white;box-shadow:0 2px 4px #0002}
+.c0{background:#2f80ed}.c1{background:#27ae60}.c2{background:#f2994a}.c3{background:#9b51e0}
+.sidebar{display:flex;flex-direction:column;gap:14px}
+.questionbox{background:#fff;color:#172b4d;border-radius:20px;padding:18px;min-height:210px}
+.qbadge{display:inline-block;border-radius:999px;background:#e9f1ff;color:#2f5da8;font-weight:900;font-size:11px;padding:6px 10px;margin-bottom:10px}
+.qtext{font-weight:850;font-size:clamp(16px,1.7vw,22px);line-height:1.25}
+.answers{display:grid;gap:8px;margin-top:12px}
+.answer{border-radius:12px;padding:10px;background:#f1f5f9;color:#23364d;font-size:13px;line-height:1.35}
+.answer.good{border-left:5px solid #27ae60}.answer.bad{border-left:5px solid #eb5757}
+.teamrow{display:flex;align-items:center;gap:8px;justify-content:space-between;background:#ffffff12;padding:10px;border-radius:12px;margin:6px 0}
+.teamname{font-weight:800}.teampos{font-size:12px;color:#c7d7ed}
+.controls{display:grid;gap:9px}.primary{background:#ffcf4a;color:#172b4d}.correct{background:#27ae60;color:white}.wrong{background:#eb5757;color:white}.secondary{background:#ffffff18;color:white;border:1px solid #ffffff2a}.controller{max-width:900px;margin:20px auto;padding:18px}.control-card{background:#ffffff0e;border:1px solid #ffffff20;border-radius:20px;padding:16px;margin:12px 0}
+input{width:100%;border-radius:12px;border:1px solid #ffffff30;background:#ffffff12;color:white;padding:12px}input::placeholder{color:#b8c7dc}
+.small{font-size:12px;color:#c4d2e6;line-height:1.5}.row{display:flex;gap:8px;flex-wrap:wrap}.row>*{flex:1}
+.winner{font-size:clamp(24px,4vw,46px);font-weight:1000;text-align:center;color:#172b4d}
+footer{text-align:center;color:#a9bbd4;font-size:11px;padding:12px}
+@media(max-width:850px){main{grid-template-columns:1fr;padding:12px}.board{min-height:440px}.step:nth-child(1){width:66%}.step:nth-child(2){width:72%;margin-left:6%}.step:nth-child(3){width:78%;margin-left:12%}.step:nth-child(4){width:84%;margin-left:18%}.step:nth-child(5){width:90%;margin-left:24%}.top{padding:12px}.controller{margin:8px auto;padding:12px}}
+</style>
+</head>
+<body>
+<div class="top">
+  <div><div class="brand">🏔️ LA ESCALERA DEL LIDERAZGO</div><div class="sub">Un desafío para llegar a la cima</div></div>
+  <div class="pill" id="connection">Conectando…</div>
+</div>
+<div id="displayView">
+<main>
+  <section class="panel">
+    <h2>🚩 El camino a la cima</h2>
+    <div class="board">
+      <div class="sky-deco">☁️ ☀️</div>
+      <div class="stairs" id="stairs"></div>
+    </div>
+  </section>
+  <section class="sidebar">
+    <div class="panel">
+      <h2>🎯 Desafío actual</h2>
+      <div class="questionbox" id="questionbox"><div class="qbadge">¡A jugar!</div><div class="qtext">Esperando que el control saque una tarjeta…</div></div>
+    </div>
+    <div class="panel"><h2>🏆 Equipos</h2><div id="teams"></div></div>
+    <div class="panel" id="victory" style="display:none"><div class="winner">🏆 ¡Llegaron a la cima!</div><p id="winnertext" style="text-align:center"></p></div>
+  </section>
+</main>
+</div>
+<div id="controllerView" style="display:none">
+<div class="controller">
+  <div class="panel">
+    <h2>🎮 Control del juego</h2>
+    <p class="small">Usá esta pantalla desde la tablet. La computadora muestra el tablero y las preguntas.</p>
+    <div class="row"><input id="teamInput" placeholder="Nombre del equipo"><button class="primary" onclick="addTeam()">＋ Agregar equipo</button></div>
+    <div id="controllerTeams"></div>
+  </div>
+  <div class="control-card">
+    <h2>1. Elegí el equipo</h2><div id="teamSelect" class="row"></div>
+  </div>
+  <div class="control-card">
+    <h2>2. Sacá una pregunta</h2>
+    <button class="primary" style="width:100%" onclick="drawQuestion()">🎴 Sacar desafío del nivel del equipo</button>
+    <p class="small">La pregunta aparece en la pantalla grande. Leela en voz alta y conversen la respuesta.</p>
+    <div id="controllerQuestion" class="questionbox" style="margin-top:12px;min-height:0"><div class="small">La guía de respuesta aparece acá, solo en la tablet, cuando sacás una tarjeta.</div></div>
+  </div>
+  <div class="control-card">
+    <h2>3. ¿Respondió correctamente?</h2>
+    <div class="row"><button class="correct" onclick="markAnswer(true)">✓ ¡Correcto! Subir</button><button class="wrong" onclick="markAnswer(false)">✗ Incorrecto</button></div>
+    <p class="small" id="statusMsg">Elegí un equipo y sacá una pregunta para comenzar.</p>
+  </div>
+  <div class="control-card">
+    <h2>Opciones</h2><div class="row"><button class="secondary" onclick="resetGame()">↻ Reiniciar partida</button><button class="secondary" onclick="showDisplay()">Ver tablero en este dispositivo</button></div>
+  </div>
+</div>
+</div>
+<footer>La Escalera del Liderazgo · Clínica Monte Grande</footer>
+<script>
+const levels = ["Colaborador","Jefe","Gerentes","Director","CEO"];
+const colors = ["#2f80ed","#27ae60","#f2994a","#9b51e0","#eb5757"];
+const questionBank = [
+{level:0,q:"Tango Gestión deja de funcionar en varias computadoras y hay tareas urgentes pendientes. ¿Qué hacés?",good:"Informo a Sistemas qué sucede, identifico los sectores afectados y aviso al equipo cómo continuar mientras se resuelve.",bad:"Reinicio mi computadora varias veces y sigo trabajando sin avisar a nadie."},
+{level:0,q:"Te asignan una tarea que nunca hiciste y no sabés bien cómo realizarla. ¿Cómo actuás?",good:"Busco información, consulto a quien corresponda y avanzo verificando que el resultado sea correcto.",bad:"La dejo pendiente hasta que alguien me explique todo, sin intentar averiguar nada."},
+{level:0,q:"Detectás que un dato de una factura fue cargado incorrectamente. ¿Qué hacés?",good:"Informo el error y gestiono su corrección según el procedimiento para evitar que afecte otros procesos.",bad:"Lo ignoro porque el error lo cometió otra persona."},
+{level:0,q:"Un compañero está atrasado y eso afecta tu trabajo. ¿Cómo respondés?",good:"Me comunico con él, coordino qué necesita cada uno y aviso al responsable si peligra el plazo.",bad:"Me quejo con otros compañeros y espero que el jefe lo resuelva."},
+{level:1,q:"Un colaborador comete un error en la carga de una factura. ¿Cómo actuás?",good:"Reviso el error con la persona, explico cómo corregirlo y hago seguimiento para que pueda hacerlo bien la próxima vez.",bad:"Lo reto y hago yo todas las cargas para que no vuelva a equivocarse."},
+{level:1,q:"Tenés diez tareas pendientes y un equipo capaz de ayudarte. ¿Cómo las organizás?",good:"Priorizo, delego según las capacidades y acordamos plazos y controles.",bad:"Hago todo personalmente porque así me aseguro de que salga rápido."},
+{level:1,q:"Dos integrantes del equipo tienen un conflicto que afecta el trabajo. ¿Qué hacés?",good:"Escucho a ambos, aclaro expectativas y acordamos una forma concreta de trabajar juntos.",bad:"Me quedo con la versión de quien trabaja mejor y sanciono al otro."},
+{level:1,q:"Un colaborador cumple sus tareas, pero necesita mejorar la calidad. ¿Cómo lo abordás?",good:"Doy una devolución específica, marco qué se espera y acordamos cómo medir la mejora.",bad:"Le digo que trabaja mal, sin explicar qué debe cambiar."},
+{level:2,q:"Dos sectores se responsabilizan mutuamente por una demora. ¿Qué hacés?",good:"Reúno a las partes, reviso el proceso, defino responsabilidades y acordamos acciones con fechas.",bad:"Defiendo a mi sector y les digo que se arreglen entre ellos."},
+{level:2,q:"Un proveedor entrega equipamiento con fallas. ¿Cómo procedés?",good:"Registro las fallas, hago el reclamo formal, gestiono la garantía y sigo el caso hasta resolverlo.",bad:"Como ya se pagó, acepto el equipo y trato de arreglarlo internamente."},
+{level:2,q:"Un proyecto puede generar ingresos, pero también requiere recursos y trabajo adicional. ¿Qué evaluás?",good:"Analizo ingresos, costos, recursos, riesgos y beneficios antes de decidir si conviene.",bad:"Lo acepto directamente porque todo ingreso extra es positivo."},
+{level:2,q:"Tu área alcanza sus objetivos, pero perjudica los resultados de otro sector. ¿Qué hacés?",good:"Reviso el impacto global, coordino con el otro sector y ajusto el proceso para lograr el resultado conjunto.",bad:"Me concentro en cumplir los objetivos de mi área, aunque el resto se atrase."},
+{level:3,q:"Querés mejorar la conexión entre la sede central y los consultorios externos. ¿Qué considerás?",good:"Evalúo necesidades de ambas sedes, infraestructura, seguridad, impacto operativo y beneficio institucional.",bad:"Me concentro únicamente en lo que necesita la sede central."},
+{level:3,q:"Un problema operativo importante se resolvió. ¿Qué hacés después?",good:"Analizo por qué ocurrió y qué cambios de proceso pueden evitar que vuelva a pasar.",bad:"Lo doy por terminado y sigo con el próximo problema."},
+{level:3,q:"Dos gerencias solicitan recursos para proyectos importantes, pero el presupuesto no alcanza. ¿Cómo decidís?",good:"Comparo impacto estratégico, urgencia, riesgos y recursos; explico prioridades y alternativas.",bad:"Asigno recursos al gerente que más insiste o tiene más antigüedad."},
+{level:3,q:"Detectás que cada gerencia trabaja con criterios distintos para un mismo proceso. ¿Qué proponés?",good:"Acordamos estándares comunes, responsables y seguimiento, respetando las particularidades necesarias.",bad:"Dejo que cada gerencia lo haga a su manera porque es responsabilidad de cada una."},
+{level:4,q:"La clínica tiene fondos limitados: debe afrontar pagos a proveedores y comprar equipamiento médico. ¿Cómo decidís?",good:"Priorizo según urgencia, impacto en la atención, vencimientos y disponibilidad financiera; comunico el criterio.",bad:"Pago primero al proveedor que más insiste o genera más presión."},
+{level:4,q:"Hay que reducir costos sin perjudicar la atención. ¿Cuál es el enfoque correcto?",good:"Identifico ineficiencias y oportunidades de ahorro sin comprometer la seguridad ni la calidad asistencial.",bad:"Recorto todos los presupuestos un 20% por igual, sin analizar el impacto."},
+{level:4,q:"La clínica recibe una propuesta que promete ingresos importantes, pero implica riesgos y compromisos. ¿Qué hacés?",good:"Evalúo rentabilidad, riesgos, capacidad operativa, impacto institucional y condiciones antes de tomar la decisión.",bad:"La acepto porque promete muchos ingresos y después vemos cómo implementarla."},
+{level:4,q:"La organización enfrenta un cambio importante y hay incertidumbre entre los equipos. ¿Qué debe hacer el CEO?",good:"Definir rumbo y prioridades, comunicar con claridad, escuchar inquietudes y alinear a los líderes para ejecutar el cambio.",bad:"Anunciar el cambio y dejar que cada sector interprete qué tiene que hacer."}
+];
+let state={teams:[],selected:null,current:null,used:[],lastResult:null};
+const isController=new URLSearchParams(location.search).get("mode")==="controller";
+if(isController){document.getElementById("displayView").style.display="none";document.getElementById("controllerView").style.display="block";}
+let controlPin=isController?sessionStorage.getItem("escaleraControlPin"):null;
+if(isController&&!controlPin){controlPin=prompt("Ingresá el PIN de control que configuraste al publicar el juego:");if(controlPin)sessionStorage.setItem("escaleraControlPin",controlPin);}
+const API=location.origin;
+async function apiGet(){try{let r=await fetch("/api/state");if(r.ok){state=await r.json();document.getElementById("connection").textContent="● Conectado";render();}}catch(e){document.getElementById("connection").textContent="● Sin conexión";}}
+async function apiPost(action,data={}){try{let r=await fetch("/api/action",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action,...data,pin:controlPin})});let d=await r.json();if(r.status===401){sessionStorage.removeItem("escaleraControlPin");controlPin=prompt(d.message||"PIN incorrecto");if(!controlPin){alert("Ingresá el PIN para usar el control.");return d;}sessionStorage.setItem("escaleraControlPin",controlPin);return apiPost(action,data);}if(d.state)state=d.state;render();return d;}catch(e){alert("No se pudo conectar al juego online. Revisá la conexión a internet y que el sitio esté publicado.");}}
+function render(){
+const stairs=document.getElementById("stairs");if(stairs){stairs.innerHTML=levels.map((l,i)=>`<div class="step" style="background:${colors[i]}22;border-color:${colors[i]}"><span class="level">NIVEL ${i+1}</span><span class="stepname">${l}</span><div class="tokens">${state.teams.filter(t=>t.level===i).map(t=>`<span class="token" style="background:${colors[t.color%5]}" title="${esc(t.name)}">${esc(t.name.slice(0,1).toUpperCase())}</span>`).join("")}</div></div>`).join("");}
+const teams=document.getElementById("teams");if(teams)teams.innerHTML=state.teams.map(t=>`<div class="teamrow"><span class="token" style="background:${colors[t.color%5]}">${esc(t.name.slice(0,1).toUpperCase())}</span><span class="teamname">${esc(t.name)}</span><span class="teampos">${levels[t.level]}</span></div>`).join("")||'<div class="small">Los equipos aparecerán acá cuando los agregues desde la tablet.</div>';
+const qbox=document.getElementById("questionbox");if(qbox){if(state.current){let q=state.current; qbox.innerHTML=`<div class="qbadge">${levels[q.level]} · ${esc(q.teamName||"Equipo")}</div><div class="qtext">${esc(q.q)}</div>`;}else qbox.innerHTML='<div class="qbadge">¡A jugar!</div><div class="qtext">Esperando que el control saque una pregunta…</div>';}
+const cq=document.getElementById("controllerQuestion");if(cq){if(state.current){let q=state.current;cq.innerHTML=`<div class="qbadge">Guía para quien coordina · ${levels[q.level]}</div><div class="qtext" style="font-size:1.05rem">${esc(q.q)}</div><div class="answers"><div class="answer good"><b>Respuesta esperada:</b> ${esc(q.good)}</div><div class="answer bad"><b>Respuesta que no corresponde:</b> ${esc(q.bad)}</div></div>`;}else cq.innerHTML='<div class="small">La guía de respuesta aparece acá, solo en la tablet, cuando sacás una tarjeta.</div>';}
+const ct=document.getElementById("controllerTeams");if(ct)ct.innerHTML=state.teams.map(t=>`<div class="teamrow"><span class="teamname">${esc(t.name)}</span><span class="teampos">${levels[t.level]}</span><button class="secondary" onclick="selectTeam('${t.id}')">${state.selected===t.id?"✓ Elegido":"Elegir"}</button></div>`).join("")||'<p class="small">Agregá los equipos para empezar.</p>';
+const ts=document.getElementById("teamSelect");if(ts)ts.innerHTML=state.teams.map(t=>`<button class="${state.selected===t.id?'primary':'secondary'}" onclick="selectTeam('${t.id}')">${esc(t.name)}</button>`).join("");
+const v=document.getElementById("victory");if(v){let winner=state.teams.find(t=>t.level>=4);v.style.display=winner?"block":"none";if(winner)document.getElementById("winnertext").textContent=winner.name+" conquistó la cima.";}
+}
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+async function addTeam(){let input=document.getElementById("teamInput");let name=input.value.trim();if(!name)return;await apiPost("addTeam",{name});input.value="";}
+async function selectTeam(id){await apiPost("selectTeam",{id});}
+async function drawQuestion(){let d=await apiPost("draw");document.getElementById("statusMsg").textContent=d.message||"Pregunta lista en pantalla.";}
+async function markAnswer(correct){let d=await apiPost("answer",{correct});document.getElementById("statusMsg").textContent=d.message||"";}
+async function resetGame(){if(confirm("¿Reiniciar la partida y volver a empezar?"))await apiPost("reset");}
+function showDisplay(){location.href="/";}
+apiGet();setInterval(apiGet,1000);
+</script>
+</body>
+</html>
