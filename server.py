@@ -5,6 +5,7 @@ from urllib.parse import urlparse, parse_qs
 import json, os, socket, random, uuid
 
 ROOT=os.path.dirname(os.path.abspath(__file__))
+LEVELS=["Colaborador","Jefe","Gerentes","Director","CEO"]
 STATE={"teams":[],"selected":None,"current":None,"used":[],"lastResult":None}
 QUESTIONS=[
 # 20 preguntas: 4 por nivel, coherentes con las tarjetas impresas.
@@ -33,43 +34,78 @@ def get_state(): return json.loads(json.dumps(STATE))
 def selected_team():
     return next((t for t in STATE["teams"] if t["id"]==STATE["selected"]),None)
 def act(a,d):
+    global QUESTIONS
+    if a=="updateQuestionBank":
+        incoming=d.get("questions",[])
+        if not isinstance(incoming,list) or len(incoming)>500:
+            return "El banco de preguntas no es válido (máximo 500 preguntas)."
+        cleaned=[]
+        for item in incoming:
+            if not isinstance(item,dict): continue
+            try: level=int(item.get("level",-1))
+            except (TypeError,ValueError): continue
+            q=str(item.get("q","")).strip()[:1200]
+            option_a=str(item.get("good",item.get("optionA",""))).strip()[:1200]
+            option_b=str(item.get("bad",item.get("optionB",""))).strip()[:1200]
+            if level in range(5) and q and option_a and option_b:
+                cleaned.append({"level":level,"q":q,"good":option_a,"bad":option_b})
+        if not cleaned: return "El banco debe tener al menos una pregunta completa."
+        QUESTIONS=cleaned
+        STATE["used"]=[]
+        return f"Banco actualizado: {len(QUESTIONS)} preguntas."
     if a=="addTeam":
-        name=str(d.get("name","Equipo")).strip()[:28]
-        if not name: return "Escribí un nombre de equipo."
-        if len(STATE["teams"])>=4: return "Máximo 4 equipos."
-        team={"id":uuid.uuid4().hex[:8],"name":name,"level":0,"color":len(STATE["teams"])}
-        STATE["teams"].append(team); STATE["selected"]=team["id"]
-        return f"Equipo {name} agregado."
+        name=str(d.get("name","Participante")).strip()[:28]
+        if not name: return "Escribí el nombre del participante."
+        if len(STATE["teams"])>=4: return "Máximo 4 participantes."
+        participant={"id":uuid.uuid4().hex[:8],"name":name,"level":0,"color":len(STATE["teams"])}
+        STATE["teams"].append(participant);STATE["selected"]=participant["id"]
+        return f"Participante {name} agregado."
     if a=="selectTeam":
         if any(t["id"]==d.get("id") for t in STATE["teams"]): STATE["selected"]=d["id"]
-        return "Equipo seleccionado."
+        return "Participante seleccionado."
     if a=="draw":
         t=selected_team()
-        if not t: return "Primero agregá y elegí un equipo."
-        if t["level"]>=4: return "Este equipo ya llegó a la cima."
+        if not t: return "Primero agregá y elegí un participante."
+        if t["level"]>=4: return "Este participante ya llegó a la cima."
         pool=[q for q in QUESTIONS if q["level"]==t["level"] and q not in STATE["used"]]
         if not pool:
             STATE["used"]=[q for q in STATE["used"] if q["level"]!=t["level"]]
             pool=[q for q in QUESTIONS if q["level"]==t["level"]]
-        q=random.choice(pool); STATE["used"].append(q)
-        STATE["current"]=dict(q,teamName=t["name"],teamId=t["id"])
+        if not pool: return f"No hay preguntas cargadas para el nivel {LEVELS[t['level']]}."
+        q=random.choice(pool);STATE["used"].append(q)
+        STATE["current"]=dict(q,teamName=t["name"],teamId=t["id"],selectedChoice=None)
         return f"Pregunta para {t['name']}."
+    if a=="answerChoice":
+        t=selected_team()
+        if not t: return "Elegí un participante."
+        current=STATE["current"]
+        if not current: return "Primero sacá una pregunta."
+        if current.get("teamId")!=t["id"]: return "La pregunta corresponde a otro participante. Seleccioná a quien está jugando."
+        choice=str(d.get("choice","")).upper()
+        if choice not in ("A","B"): return "Elegí la opción A o B."
+        current["selectedChoice"]=choice
+        return f"{t['name']} eligió la opción {choice}. Ahora indicá si la respuesta fue correcta o incorrecta."
     if a=="answer":
         t=selected_team()
-        if not t: return "Elegí un equipo."
-        if not STATE["current"]: return "Primero sacá una pregunta."
-        if STATE["current"].get("teamId")!=t["id"]: return "La pregunta corresponde a otro equipo. Seleccioná el equipo que está jugando."
-        if d.get("correct"):
+        if not t: return "Elegí un participante."
+        current=STATE["current"]
+        if not current: return "Primero sacá una pregunta."
+        if current.get("teamId")!=t["id"]: return "La pregunta corresponde a otro participante. Seleccioná a quien está jugando."
+        if current.get("selectedChoice") not in ("A","B"): return "Primero registrá si eligió A o B."
+        if bool(d.get("correct")):
             t["level"]=min(4,t["level"]+1)
-            STATE["lastResult"]="correct"
-            msg=f"¡Correcto! {t['name']} sube a {['Colaborador','Jefe','Gerentes','Director','CEO'][t['level']]}."
+            result_type="winner" if t["level"]>=4 else "correct"
+            msg=(f"¡{t['name']} es el nuevo CEO de la clínica! ¡Felicitaciones, a brindar!"
+                 if result_type=="winner" else f"¡Correcto! {t['name']} sube a {LEVELS[t['level']]}." )
         else:
-            STATE["lastResult"]="wrong"
-            msg=f"Esta vez no. {t['name']} se queda en {['Colaborador','Jefe','Gerentes','Director','CEO'][t['level']]}."
+            result_type="wrong"
+            msg=f"Incorrecto. {t['name']} se queda en {LEVELS[t['level']]}."
+        STATE["lastResult"]={"type":result_type,"teamName":t["name"],"teamId":t["id"],
+                             "eventId":uuid.uuid4().hex,"selectedChoice":current.get("selectedChoice")}
         STATE["current"]=None
         return msg
     if a=="reset":
-        STATE["teams"]=[];STATE["selected"]=None;STATE["current"]=None;STATE["used"]=[];STATE["lastResult"]=None
+        STATE.update({"teams":[],"selected":None,"current":None,"used":[],"lastResult":None})
         return "Partida reiniciada."
     return "Acción no reconocida."
 class Handler(BaseHTTPRequestHandler):
