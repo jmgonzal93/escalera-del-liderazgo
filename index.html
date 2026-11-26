@@ -52,7 +52,7 @@ footer{text-align:center;color:#a9bbd4;font-size:11px;padding:12px}
 .audio-status{font-size:11px;color:#b9c8df}
 .winner-overlay{position:fixed;inset:0;z-index:9999;display:none;align-items:center;justify-content:center;padding:24px;background:radial-gradient(circle at center,#193c68f5 0%,#081326f7 75%);text-align:center;overflow:hidden}
 .winner-card{position:relative;z-index:2;width:min(900px,96vw);padding:clamp(24px,5vw,64px);border:3px solid #ffd45a;border-radius:32px;background:linear-gradient(145deg,#fff9df,#fff 65%);color:#172b4d;box-shadow:0 0 0 12px #ffd45a22,0 30px 90px #0008;animation:winnerPop .7s cubic-bezier(.2,1.5,.5,1)}
-.winner-cup{font-size:clamp(54px,10vw,110px);line-height:1}
+.winner-close{position:absolute;right:12px;top:12px;width:46px;height:46px;border-radius:50%;padding:0;background:#172b4d;color:#fff;font-size:32px;line-height:1;display:grid;place-items:center;box-shadow:0 3px 10px #0003;z-index:5}.winner-close:hover{background:#eb5757}.winner-cup{font-size:clamp(54px,10vw,110px);line-height:1}
 .winner-title{font-size:clamp(28px,7vw,76px);font-weight:1000;line-height:1.05;margin:18px 0;color:#172b4d;text-transform:uppercase;overflow-wrap:anywhere}
 .winner-subtitle{font-size:clamp(16px,3vw,28px);font-weight:800;color:#a36a00}
 .confetti{position:absolute;inset:0;pointer-events:none;background-image:radial-gradient(circle,#ffd447 2px,transparent 3px),radial-gradient(circle,#e95757 3px,transparent 4px),radial-gradient(circle,#3bbf8a 2px,transparent 3px),radial-gradient(circle,#5d91ff 3px,transparent 4px);background-size:90px 120px,130px 100px,110px 150px,160px 130px;animation:confettiFall 3s linear infinite;opacity:.85}
@@ -60,7 +60,27 @@ footer{text-align:center;color:#a9bbd4;font-size:11px;padding:12px}
 @keyframes confettiFall{from{background-position:0 -200px,40px -150px,80px -300px,120px -250px}to{background-position:0 900px,40px 850px,80px 1000px,120px 950px}}
 @media(max-width:600px){.winner-card{padding:28px 16px}.answer-pick-row{grid-template-columns:1fr}}
 
-.answer-pick.selected-choice{outline:5px solid #172b4d;outline-offset:2px;box-shadow:0 0 0 9px #f6c44599;background:#ffe28a!important;color:#172b4d!important;border:3px solid #172b4d;font-weight:1000;transform:scale(1.025)}.answer-pick-row .correct,.answer-pick-row .wrong{font-size:clamp(14px,2vw,18px);min-height:62px}.winner-toast{color:#a36a00;letter-spacing:.02em}</style>
+.answer-pick.selected-choice{outline:5px solid #172b4d;outline-offset:2px;box-shadow:0 0 0 9px #f6c44599;background:#ffe28a!important;color:#172b4d!important;border:3px solid #172b4d;font-weight:1000;transform:scale(1.025)}.answer-pick-row .correct,.answer-pick-row .wrong{font-size:clamp(14px,2vw,18px);min-height:62px}.winner-toast{color:#a36a00;letter-spacing:.02em}
+/* Corrección de ancho de escalones: ningún nivel se sale del tablero */
+.step:nth-child(1){width:58%;margin-left:0}
+.step:nth-child(2){width:66%;margin-left:8%}
+.step:nth-child(3){width:74%;margin-left:16%}
+.step:nth-child(4){width:76%;margin-left:20%}
+.step:nth-child(5){width:78%;margin-left:22%}
+/* La pantalla pública refleja la opción elegida y el resultado manual */
+.choice-display.selected-choice{border:3px solid #f6c445;background:#fff1b8;box-shadow:0 0 0 3px #f6c44533}
+.choice-display.correct-choice{border:3px solid #219653;background:#d8f8e4;color:#14532d;box-shadow:0 0 0 3px #27ae6033}
+.choice-display.wrong-choice{border:3px solid #d93030;background:#ffe0e0;color:#7f1d1d;box-shadow:0 0 0 3px #eb575733}
+.choice-result-label{margin-top:10px;font-weight:900;font-size:14px;color:#172b4d;background:#eef4ff;border-radius:10px;padding:9px 12px}
+@media(max-width:850px){
+ .step:nth-child(1){width:66%;margin-left:0}
+ .step:nth-child(2){width:72%;margin-left:6%}
+ .step:nth-child(3){width:78%;margin-left:12%}
+ .step:nth-child(4){width:78%;margin-left:18%}
+ .step:nth-child(5){width:76%;margin-left:24%}
+}
+
+</style>
 </head>
 <body>
 <div class="top">
@@ -94,6 +114,7 @@ footer{text-align:center;color:#a9bbd4;font-size:11px;padding:12px}
 <div id="winnerOverlay" class="winner-overlay" role="dialog" aria-live="assertive">
   <div class="confetti"></div>
   <div class="winner-card">
+    <button class="winner-close" type="button" aria-label="Cerrar cartel de ganador" title="Cerrar" onclick="closeWinnerOverlay()">×</button>
     <div class="winner-cup">🏆</div>
     <div class="winner-title" id="winnerName">¡PARTICIPANTE GANADOR!</div>
     <div class="winner-subtitle">¡ES EL NUEVO CEO DE LA CLÍNICA!</div>
@@ -193,7 +214,7 @@ if(isController){document.getElementById("displayView").style.display="none";doc
 let controlPin=isController?sessionStorage.getItem("escaleraControlPin"):null;
 if(isController&&!controlPin){controlPin=prompt("Ingresá el PIN de control que configuraste al publicar el juego:");if(controlPin)sessionStorage.setItem("escaleraControlPin",controlPin);}
 
-let audioContext=null,lastAudioEvent=null,audioStateInitialized=false,customVictoryAudio=null,customVictoryObjectUrl=null;
+let audioContext=null,lastAudioEvent=null,audioStateInitialized=false,customVictoryAudio=null,customVictoryObjectUrl=null,dismissedWinnerId=null;
 async function activateAudio(){
   try{
     audioContext=audioContext||new (window.AudioContext||window.webkitAudioContext)();
@@ -214,8 +235,8 @@ function playTone(freq,delay,duration,wave="sine",volume=.12){
 function playResultSound(type){
   if(!audioContext)return;
   if(audioContext.state==="suspended")audioContext.resume();
-  if(type==="correct"){[660,880,1100].forEach((f,i)=>playTone(f,i*.11,.18,"sine",.12));}
-  else if(type==="wrong"){playTone(190,0,.22,"triangle",.14);playTone(140,.13,.26,"triangle",.12);}
+  if(type==="correct"){[660,880,1100].forEach((f,i)=>playTone(f,i*.11,.22,"sine",.24));}
+  else if(type==="wrong"){playTone(190,0,.28,"triangle",.27);playTone(140,.13,.32,"triangle",.24);}
 }
 function playVictoryMusic(){
   if(customVictoryAudio){
@@ -262,6 +283,7 @@ const API=location.origin;
 let lastQuestionSync=0;
 async function apiGet(){try{let r=await fetch("/api/state");if(r.ok){state=await r.json();document.getElementById("connection").textContent="● Conectado";render();if(isController&&controlPin&&(lastQuestionSync===0||(state.teams.length===0&&!state.current&&Date.now()-lastQuestionSync>20000))){lastQuestionSync=Date.now();await apiPost("updateQuestionBank",{questions:questionBank});}}}catch(e){document.getElementById("connection").textContent="● Sin conexión";}}
 async function apiPost(action,data={}){try{let r=await fetch("/api/action",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action,...data,pin:controlPin})});let d=await r.json();if(r.status===401){sessionStorage.removeItem("escaleraControlPin");controlPin=prompt(d.message||"PIN incorrecto");if(!controlPin){alert("Ingresá el PIN para usar el control.");return d;}sessionStorage.setItem("escaleraControlPin",controlPin);return apiPost(action,data);}if(d.state)state=d.state;render();return d;}catch(e){alert("No se pudo conectar al juego online. Revisá la conexión a internet y que el sitio esté publicado.");}}
+function closeWinnerOverlay(){const w=state.teams.find(t=>t.level>=4);dismissedWinnerId=w?w.id:null;const o=document.getElementById("winnerOverlay");if(o)o.style.display="none";}
 function render(){
 const stairs=document.getElementById("stairs");
 if(stairs){stairs.innerHTML=levels.map((l,i)=>`<div class="step" style="background:${colors[i]}22;border-color:${colors[i]}"><span class="level">NIVEL ${i+1}</span><span class="stepname">${l}</span><div class="tokens">${state.teams.filter(t=>t.level===i).map(t=>`<span class="token" style="background:${colors[t.color%5]}" title="${esc(t.name)}">${esc(t.name.slice(0,1).toUpperCase())}</span>`).join("")}</div></div>`).join("");}
@@ -269,8 +291,14 @@ const teams=document.getElementById("teams");
 if(teams)teams.innerHTML=state.teams.map(t=>`<div class="teamrow"><span class="token" style="background:${colors[t.color%5]}">${esc(t.name.slice(0,1).toUpperCase())}</span><span class="teamname">${esc(t.name)}</span><span class="teampos">${levels[t.level]}</span></div>`).join("")||'<div class="small">Los participantes aparecerán acá cuando los agregues desde la tablet.</div>';
 const qbox=document.getElementById("questionbox");
 if(qbox){
-  if(state.current){let q=state.current;qbox.innerHTML=`<div class="qbadge">${levels[q.level]} · ${esc(q.teamName||"Participante")}</div><div class="qtext">${esc(q.q)}</div><div class="choice-list"><div class="choice-display"><span class="choice-letter">A</span><span>${esc(q.good)}</span></div><div class="choice-display"><span class="choice-letter">B</span><span>${esc(q.bad)}</span></div></div>`;}
-  else qbox.innerHTML='<div class="qbadge">¡A jugar!</div><div class="qtext">Esperando que el control saque una pregunta…</div>';
+  const q=state.current||state.lastResult;
+  if(q&&q.q){
+    const judged=!state.current&&!!q.eventId;
+    const chosen=q.selectedChoice;
+    const resultClass=judged?(q.type==="wrong"?"wrong-choice":"correct-choice"):(chosen?"selected-choice":"");
+    const resultText=judged?(q.type==="wrong"?`✕ Eligió ${chosen} · Respuesta incorrecta`:`✓ Eligió ${chosen} · Respuesta correcta`):(chosen?`◉ El participante eligió ${chosen}`:"Esperando que el participante elija A o B");
+    qbox.innerHTML=`<div class="qbadge">${levels[q.level]||"Desafío"} · ${esc(q.teamName||"Participante")}</div><div class="qtext">${esc(q.q)}</div><div class="choice-list"><div class="choice-display ${chosen==="A"?resultClass:""}"><span class="choice-letter">A</span><span>${esc(q.good)}</span></div><div class="choice-display ${chosen==="B"?resultClass:""}"><span class="choice-letter">B</span><span>${esc(q.bad)}</span></div></div>${chosen?`<div class="choice-result-label">${esc(resultText)}</div>`:""}`;
+  }else qbox.innerHTML='<div class="qbadge">¡A jugar!</div><div class="qtext">Esperando que el control saque una pregunta…</div>';
 }
 const cq=document.getElementById("controllerQuestion");
 if(cq){
@@ -301,7 +329,7 @@ if(mc)mc.disabled=!selectedChoice;if(mw)mw.disabled=!selectedChoice;
 const winner=state.teams.find(t=>t.level>=4);
 const oldVictory=document.getElementById("victory");if(oldVictory)oldVictory.style.display="none";
 const overlay=document.getElementById("winnerOverlay");
-if(overlay){overlay.style.display=winner?"flex":"none";if(winner){const wn=document.getElementById("winnerName");if(wn)wn.textContent=`¡${winner.name} ES EL NUEVO CEO DE LA CLÍNICA!`;}}
+if(overlay){const showWinner=!!winner&&winner.id!==dismissedWinnerId;overlay.style.display=showWinner?"flex":"none";if(showWinner){const wn=document.getElementById("winnerName");if(wn)wn.textContent=`¡${winner.name} ES EL NUEVO CEO DE LA CLÍNICA!`;}}
 if(!isController){
   if(!audioStateInitialized){lastAudioEvent=state.lastResult&&state.lastResult.eventId?state.lastResult.eventId:null;audioStateInitialized=true;}
   else if(state.lastResult&&state.lastResult.eventId&&lastAudioEvent!==state.lastResult.eventId){
@@ -327,7 +355,7 @@ async function answerOutcome(correct){
   let d=await apiPost("answer",{correct});
   document.getElementById("statusMsg").textContent=d.message||"Resultado registrado.";
 }
-async function resetGame(){if(confirm("¿Reiniciar la partida y volver a empezar?"))await apiPost("reset");}
+async function resetGame(){if(confirm("¿Reiniciar la partida y volver a empezar?")){dismissedWinnerId=null;await apiPost("reset");}}
 function saveQuestion(){
  const level=Number(document.getElementById("questionLevel").value),q=document.getElementById("questionText").value.trim(),good=document.getElementById("questionGood").value.trim(),bad=document.getElementById("questionBad").value.trim();
  if(!q||!good||!bad){alert("Completá la pregunta y las opciones A y B.");return;}
