@@ -33,7 +33,7 @@ main{max-width:1400px;margin:auto;padding:20px;display:grid;grid-template-column
 .teamrow{display:flex;align-items:center;gap:8px;justify-content:space-between;background:#ffffff12;padding:10px;border-radius:12px;margin:6px 0}
 .teamname{font-weight:800}.teampos{font-size:12px;color:#c7d7ed}
 .controls{display:grid;gap:9px}.primary{background:#ffcf4a;color:#172b4d}.correct{background:#27ae60;color:white}.wrong{background:#eb5757;color:white}.secondary{background:#ffffff18;color:white;border:1px solid #ffffff2a}.controller{max-width:900px;margin:20px auto;padding:18px}.control-card{background:#ffffff0e;border:1px solid #ffffff20;border-radius:20px;padding:16px;margin:12px 0}
-input{width:100%;border-radius:12px;border:1px solid #ffffff30;background:#ffffff12;color:white;padding:12px}input::placeholder{color:#b8c7dc}
+input,textarea,select{width:100%;border-radius:12px;border:1px solid #ffffff30;background:#ffffff12;color:white;padding:12px}textarea{font:inherit;min-height:78px;resize:vertical}select option{color:#172b4d}input::placeholder,textarea::placeholder{color:#b8c7dc}
 .small{font-size:12px;color:#c4d2e6;line-height:1.5}.row{display:flex;gap:8px;flex-wrap:wrap}.row>*{flex:1}
 .winner{font-size:clamp(24px,4vw,46px);font-weight:1000;text-align:center;color:#172b4d}
 footer{text-align:center;color:#a9bbd4;font-size:11px;padding:12px}
@@ -87,6 +87,18 @@ footer{text-align:center;color:#a9bbd4;font-size:11px;padding:12px}
     <p class="small" id="statusMsg">Elegí un equipo y sacá una pregunta para comenzar.</p>
   </div>
   <div class="control-card">
+    <h2>📝 Administrar preguntas por nivel</h2>
+    <p class="small">Las preguntas se eligen automáticamente según el nivel actual del equipo. Las que agregues o edites quedan guardadas en esta tablet.</p>
+    <div class="row"><select id="questionLevel"><option value="0">Nivel 1 · Colaborador</option><option value="1">Nivel 2 · Jefe</option><option value="2">Nivel 3 · Gerentes</option><option value="3">Nivel 4 · Director</option><option value="4">Nivel 5 · CEO</option></select></div>
+    <textarea id="questionText" placeholder="Escribí la pregunta o situación"></textarea>
+    <textarea id="questionGood" placeholder="Respuesta esperada / criterio correcto"></textarea>
+    <textarea id="questionBad" placeholder="Respuesta que no corresponde / criterio incorrecto"></textarea>
+    <div class="row" style="margin-top:8px"><button class="primary" onclick="saveQuestion()">＋ Guardar pregunta</button><button class="secondary" onclick="cancelQuestionEdit()">Cancelar edición</button></div>
+    <div class="row" style="margin-top:8px"><button class="secondary" onclick="exportQuestionBank()">⬇ Exportar respaldo</button><label class="secondary" style="display:block;text-align:center;border-radius:14px;padding:12px 16px;font-weight:800;cursor:pointer">⬆ Importar respaldo<input type="file" id="questionImportFile" accept="application/json,.json" style="display:none" onchange="importQuestionBank(event)"></label></div>
+    <p class="small" id="questionAdminStatus">Preguntas disponibles: 20</p>
+    <div id="questionAdminList"></div>
+  </div>
+  <div class="control-card">
     <h2>Opciones</h2><div class="row"><button class="secondary" onclick="resetGame()">↻ Reiniciar partida</button><button class="secondary" onclick="showDisplay()">Ver tablero en este dispositivo</button></div>
   </div>
 </div>
@@ -117,13 +129,17 @@ const questionBank = [
 {level:4,q:"La clínica recibe una propuesta que promete ingresos importantes, pero implica riesgos y compromisos. ¿Qué hacés?",good:"Evalúo rentabilidad, riesgos, capacidad operativa, impacto institucional y condiciones antes de tomar la decisión.",bad:"La acepto porque promete muchos ingresos y después vemos cómo implementarla."},
 {level:4,q:"La organización enfrenta un cambio importante y hay incertidumbre entre los equipos. ¿Qué debe hacer el CEO?",good:"Definir rumbo y prioridades, comunicar con claridad, escuchar inquietudes y alinear a los líderes para ejecutar el cambio.",bad:"Anunciar el cambio y dejar que cada sector interprete qué tiene que hacer."}
 ];
+const QUESTION_STORAGE_KEY="escaleraQuestionsV1";
+let questionBankEditId=null;
+try{const savedQuestions=localStorage.getItem(QUESTION_STORAGE_KEY);if(savedQuestions){const parsed=JSON.parse(savedQuestions);if(Array.isArray(parsed)&&parsed.length)questionBank.splice(0,questionBank.length,...parsed);}}catch(e){}
 let state={teams:[],selected:null,current:null,used:[],lastResult:null};
 const isController=new URLSearchParams(location.search).get("mode")==="controller";
 if(isController){document.getElementById("displayView").style.display="none";document.getElementById("controllerView").style.display="block";}
 let controlPin=isController?sessionStorage.getItem("escaleraControlPin"):null;
 if(isController&&!controlPin){controlPin=prompt("Ingresá el PIN de control que configuraste al publicar el juego:");if(controlPin)sessionStorage.setItem("escaleraControlPin",controlPin);}
 const API=location.origin;
-async function apiGet(){try{let r=await fetch("/api/state");if(r.ok){state=await r.json();document.getElementById("connection").textContent="● Conectado";render();}}catch(e){document.getElementById("connection").textContent="● Sin conexión";}}
+let lastQuestionSync=0;
+async function apiGet(){try{let r=await fetch("/api/state");if(r.ok){state=await r.json();document.getElementById("connection").textContent="● Conectado";render();if(isController&&controlPin&&(lastQuestionSync===0||(state.teams.length===0&&!state.current&&Date.now()-lastQuestionSync>20000))){lastQuestionSync=Date.now();await apiPost("updateQuestionBank",{questions:questionBank});}}}catch(e){document.getElementById("connection").textContent="● Sin conexión";}}
 async function apiPost(action,data={}){try{let r=await fetch("/api/action",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action,...data,pin:controlPin})});let d=await r.json();if(r.status===401){sessionStorage.removeItem("escaleraControlPin");controlPin=prompt(d.message||"PIN incorrecto");if(!controlPin){alert("Ingresá el PIN para usar el control.");return d;}sessionStorage.setItem("escaleraControlPin",controlPin);return apiPost(action,data);}if(d.state)state=d.state;render();return d;}catch(e){alert("No se pudo conectar al juego online. Revisá la conexión a internet y que el sitio esté publicado.");}}
 function render(){
 const stairs=document.getElementById("stairs");if(stairs){stairs.innerHTML=levels.map((l,i)=>`<div class="step" style="background:${colors[i]}22;border-color:${colors[i]}"><span class="level">NIVEL ${i+1}</span><span class="stepname">${l}</span><div class="tokens">${state.teams.filter(t=>t.level===i).map(t=>`<span class="token" style="background:${colors[t.color%5]}" title="${esc(t.name)}">${esc(t.name.slice(0,1).toUpperCase())}</span>`).join("")}</div></div>`).join("");}
@@ -133,6 +149,7 @@ const cq=document.getElementById("controllerQuestion");if(cq){if(state.current){
 const ct=document.getElementById("controllerTeams");if(ct)ct.innerHTML=state.teams.map(t=>`<div class="teamrow"><span class="teamname">${esc(t.name)}</span><span class="teampos">${levels[t.level]}</span><button class="secondary" onclick="selectTeam('${t.id}')">${state.selected===t.id?"✓ Elegido":"Elegir"}</button></div>`).join("")||'<p class="small">Agregá los equipos para empezar.</p>';
 const ts=document.getElementById("teamSelect");if(ts)ts.innerHTML=state.teams.map(t=>`<button class="${state.selected===t.id?'primary':'secondary'}" onclick="selectTeam('${t.id}')">${esc(t.name)}</button>`).join("");
 const v=document.getElementById("victory");if(v){let winner=state.teams.find(t=>t.level>=4);v.style.display=winner?"block":"none";if(winner)document.getElementById("winnertext").textContent=winner.name+" conquistó la cima.";}
+renderQuestionAdmin();
 }
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
 async function addTeam(){let input=document.getElementById("teamInput");let name=input.value.trim();if(!name)return;await apiPost("addTeam",{name});input.value="";}
@@ -140,6 +157,18 @@ async function selectTeam(id){await apiPost("selectTeam",{id});}
 async function drawQuestion(){let d=await apiPost("draw");document.getElementById("statusMsg").textContent=d.message||"Pregunta lista en pantalla.";}
 async function markAnswer(correct){let d=await apiPost("answer",{correct});document.getElementById("statusMsg").textContent=d.message||"";}
 async function resetGame(){if(confirm("¿Reiniciar la partida y volver a empezar?"))await apiPost("reset");}
+function saveQuestion(){
+ const level=Number(document.getElementById("questionLevel").value),q=document.getElementById("questionText").value.trim(),good=document.getElementById("questionGood").value.trim(),bad=document.getElementById("questionBad").value.trim();
+ if(!q||!good||!bad){alert("Completá la pregunta y las dos guías de respuesta.");return;}
+ const item={level,q,good,bad};if(questionBankEditId===null)questionBank.push(item);else questionBank[questionBankEditId]=item;
+ localStorage.setItem(QUESTION_STORAGE_KEY,JSON.stringify(questionBank));cancelQuestionEdit();renderQuestionAdmin();apiPost("updateQuestionBank",{questions:questionBank}).then(d=>{document.getElementById("questionAdminStatus").textContent=(d.message||"Banco sincronizado")+" · Guardado en esta tablet.";});
+}
+function editQuestion(i){const q=questionBank[i];questionBankEditId=i;document.getElementById("questionLevel").value=q.level;document.getElementById("questionText").value=q.q;document.getElementById("questionGood").value=q.good;document.getElementById("questionBad").value=q.bad;document.getElementById("questionAdminStatus").textContent="Editando pregunta "+(i+1)+".";document.getElementById("questionText").scrollIntoView({behavior:"smooth",block:"center"});}
+function deleteQuestion(i){if(questionBank.length===1){alert("No podés eliminar la única pregunta que queda. Agregá otra primero.");return;}if(!confirm("¿Eliminar esta pregunta?"))return;questionBank.splice(i,1);localStorage.setItem(QUESTION_STORAGE_KEY,JSON.stringify(questionBank));renderQuestionAdmin();apiPost("updateQuestionBank",{questions:questionBank}).then(d=>document.getElementById("questionAdminStatus").textContent=d.message||"Banco actualizado.");}
+function cancelQuestionEdit(){questionBankEditId=null;document.getElementById("questionLevel").value="0";document.getElementById("questionText").value="";document.getElementById("questionGood").value="";document.getElementById("questionBad").value="";}
+function renderQuestionAdmin(){const list=document.getElementById("questionAdminList");if(!list)return;const count=document.getElementById("questionAdminStatus");if(count&&!count.textContent.startsWith("Editando"))count.textContent="Preguntas disponibles: "+questionBank.length+" · "+levels.map((l,i)=>l+": "+questionBank.filter(q=>Number(q.level)===i).length).join(" · ");list.innerHTML=questionBank.map((q,i)=>`<div class="teamrow" style="align-items:flex-start;flex-wrap:wrap"><div style="flex:1;min-width:180px"><b>${levels[Number(q.level)]||"Nivel"}</b><div class="small" style="margin-top:4px;color:#e1eaf6">${esc(q.q)}</div></div><button class="secondary" onclick="editQuestion(${i})">Editar</button><button class="secondary" onclick="deleteQuestion(${i})">Eliminar</button></div>`).join("");}
+function exportQuestionBank(){const blob=new Blob([JSON.stringify(questionBank,null,2)],{type:"application/json;charset=utf-8"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="preguntas_escalera_liderazgo.json";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);document.getElementById("questionAdminStatus").textContent="Respaldo descargado. Guardalo por si cambiás de tablet o navegador.";}
+function importQuestionBank(event){const file=event.target.files&&event.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=()=>{try{const data=JSON.parse(reader.result);if(!Array.isArray(data)||!data.length||data.length>500)throw new Error("El archivo debe contener entre 1 y 500 preguntas.");const cleaned=data.map(q=>({level:Number(q.level),q:String(q.q||"").trim(),good:String(q.good||"").trim(),bad:String(q.bad||"").trim()}));if(cleaned.some(q=>!Number.isInteger(q.level)||q.level<0||q.level>4||!q.q||!q.good||!q.bad))throw new Error("Hay preguntas incompletas o con un nivel inválido.");if(!confirm("Se reemplazará el banco actual por las "+cleaned.length+" preguntas del archivo. ¿Continuar?"))return;questionBank.splice(0,questionBank.length,...cleaned);localStorage.setItem(QUESTION_STORAGE_KEY,JSON.stringify(questionBank));renderQuestionAdmin();apiPost("updateQuestionBank",{questions:questionBank}).then(d=>document.getElementById("questionAdminStatus").textContent=(d.message||"Banco importado")+" · Guardado en esta tablet.");}catch(e){alert("No se pudo importar: "+e.message);}finally{event.target.value="";}};reader.readAsText(file,"UTF-8");}
 function showDisplay(){location.href="/";}
 apiGet();setInterval(apiGet,1000);
 </script>
